@@ -1,8 +1,10 @@
 # Modular Hypercar Aero Package // Digital Twin Pro v7.0
 
+**By** : SAMUELSON G
+
 ![Version](https://img.shields.io/badge/Version-7.0.0--LMH-e74c3c?style=for-the-badge)
-![Tech](https://img.shields.io/badge/Tech-Three.js%20%7C%20WebGL-00d2ff?style=for-the-badge)
-![License](https://img.shields.io/badge/License-MIT-2ecc71?style=for-the-badge)
+[![Tech](https://img.shields.io/badge/Tech-Three.js%20%7C%20WebGL-00d2ff?style=for-the-badge)](https://samuelson777.github.io/hypercar-aero-digital-twin/)
+[![License](https://img.shields.io/badge/License-MIT-2ecc71?style=for-the-badge)](https://github.com/Samuelson777/hypercar-aero-digital-twin/blob/main/LICENSE)
 
 A browser-based, high-performance digital twin simulating FIA WEC Le Mans Hypercar (LMH) aerodynamics. Built natively in HTML, JavaScript, and Three.js, this application shifts aerodynamic analysis from static, resource-heavy offline solvers into an accessible, real-time visual format.
 
@@ -49,4 +51,4 @@ To elevate the simulation from a conceptual digital twin to a highly accurate en
 
 ## License
 
-This project is licensed under the MIT License. See the [LICENSE](LICENSE) file for details.
+This project is licensed under the MIT License. See the [LICENSE](https://github.com/Samuelson777/hypercar-aero-digital-twin/blob/main/LICENSE) file for details.
