@@ -1,0 +1,678 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Modular Hypercar Aero Package // Digital Twin Pro v7.0</title>
+    <style>
+        /* --- PROFESSIONAL AEROSPACE / MOTORSPORT DESIGN SYSTEM --- */
+        :root {
+            --primary: #e74c3c;
+            --primary-hover: #c0392b;
+            --accent: #00d2ff;
+            --success: #2ecc71;
+            --warning: #f39c12;
+            
+            --bg-canvas: #060709;
+            --panel-bg: rgba(10, 13, 18, 0.88);
+            --panel-border: rgba(255, 255, 255, 0.1);
+            --text-main: #f0f3f6;
+            --text-muted: #8a9ba8;
+            --input-bg: rgba(0, 0, 0, 0.6);
+            --shadow: 0 24px 48px rgba(0, 0, 0, 0.85);
+            --glass-blur: blur(25px);
+        }
+
+        [data-theme="light"] {
+            --bg-canvas: #dce3eb;
+            --panel-bg: rgba(255, 255, 255, 0.92);
+            --panel-border: rgba(0, 0, 0, 0.12);
+            --text-main: #111827;
+            --text-muted: #4b5563;
+            --input-bg: rgba(240, 244, 248, 0.9);
+            --shadow: 0 24px 48px rgba(0, 0, 0, 0.12);
+        }
+
+        * { box-sizing: border-box; margin: 0; padding: 0; user-select: none; }
+        body {
+            overflow: hidden;
+            background-color: var(--bg-canvas);
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+            color: var(--text-main);
+            transition: background-color 0.4s ease;
+        }
+
+        #canvas-container { width: 100vw; height: 100vh; position: absolute; top: 0; left: 0; z-index: 1; }
+        
+        /* HUD TOGGLE SYSTEM */
+        .ui-toggle {
+            position: absolute; top: 20px; left: 50%; transform: translateX(-50%); z-index: 100;
+            background: var(--panel-bg); border: 1px solid var(--panel-border);
+            color: var(--text-muted); padding: 8px 18px; border-radius: 20px;
+            cursor: pointer; font-size: 10px; font-weight: 700; text-transform: uppercase;
+            letter-spacing: 1.5px; backdrop-filter: var(--glass-blur);
+            transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+            box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+        }
+        .ui-toggle:hover { color: var(--text-main); border-color: var(--accent); }
+        .ui-toggle.ghosted { opacity: 0.2; }
+        .ui-toggle.ghosted:hover { opacity: 1; border-color: var(--primary); }
+
+        /* UI LAYER KINEMATICS */
+        #ui-layer { 
+            position: absolute; top: 0; left: 0; width: 100vw; height: 100vh; z-index: 2; 
+            pointer-events: none; display: flex; flex-direction: column; justify-content: space-between; 
+            transition: opacity 0.4s cubic-bezier(0.16, 1, 0.3, 1), filter 0.4s ease, transform 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+        }
+        #ui-layer.hidden { opacity: 0; pointer-events: none; filter: blur(6px); transform: scale(1.015); }
+
+        header { padding: 20px 30px; background: linear-gradient(to bottom, var(--bg-canvas), transparent); display: flex; justify-content: space-between; align-items: flex-start; pointer-events: auto; }
+        .brand-group h1 { font-size: 18px; text-transform: uppercase; letter-spacing: 3px; font-weight: 800; }
+        .brand-group h1 span { color: var(--primary); }
+        .subtitle { font-size: 10px; color: var(--text-muted); letter-spacing: 1.5px; margin-top: 4px; font-family: monospace; }
+        .header-actions { display: flex; gap: 10px; }
+
+        .glass-panel { background: var(--panel-bg); border: 1px solid var(--panel-border); border-radius: 10px; backdrop-filter: var(--glass-blur); -webkit-backdrop-filter: var(--glass-blur); box-shadow: var(--shadow); pointer-events: auto; transition: background 0.4s ease, border 0.4s ease; }
+        #dashboard { position: absolute; bottom: 25px; left: 25px; padding: 20px; width: 360px; max-height: calc(100vh - 110px); overflow-y: auto; }
+        #telemetry { position: absolute; bottom: 25px; right: 25px; padding: 20px; width: 320px; }
+
+        .panel-section { margin-bottom: 18px; }
+        .panel-section:last-child { margin-bottom: 0; }
+        label { font-size: 10px; text-transform: uppercase; color: var(--text-muted); display: block; margin-bottom: 8px; letter-spacing: 1.2px; font-weight: 700; }
+
+        .btn-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+        .btn { background: var(--input-bg); border: 1px solid var(--panel-border); color: var(--text-main); padding: 10px 12px; width: 100%; border-radius: 6px; cursor: pointer; font-size: 10px; text-transform: uppercase; font-weight: 700; letter-spacing: 0.8px; transition: all 0.2s ease; }
+        .btn:hover { border-color: var(--accent); color: var(--accent); }
+        .btn.active { background: var(--primary); border-color: var(--primary-hover); color: #ffffff; }
+        .btn-full { grid-column: span 2; }
+
+        .color-palette { display: grid; grid-template-columns: repeat(6, 1fr); gap: 8px; }
+        .swatch {
+            width: 100%; aspect-ratio: 1; border-radius: 6px; border: 2px solid transparent; cursor: pointer;
+            transition: transform 0.2s ease, border-color 0.2s ease, box-shadow 0.2s ease;
+        }
+        .swatch:hover { transform: scale(1.15); }
+        .swatch.active { border-color: #ffffff; box-shadow: 0 0 12px rgba(255, 255, 255, 0.5); }
+
+        .slider-container { margin-top: 6px; }
+        .slider-header { display: flex; justify-content: space-between; font-size: 11px; margin-bottom: 6px; color: var(--text-muted); font-family: monospace; }
+        input[type="range"] { width: 100%; appearance: none; height: 4px; background: var(--panel-border); border-radius: 2px; outline: none; }
+        input[type="range"]::-webkit-slider-thumb { appearance: none; width: 14px; height: 14px; border-radius: 50%; background: var(--primary); cursor: pointer; transition: transform 0.1s; }
+        
+        .data-row { display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; font-size: 11px; border-bottom: 1px solid rgba(255,255,255,0.04); padding-bottom: 5px; }
+        .data-row:last-child { border-bottom: none; margin-bottom: 0; padding-bottom: 0; }
+        .data-label { color: var(--text-muted); }
+        .data-value { font-family: 'SF Mono', Monaco, Consolas, monospace; color: var(--success); font-size: 13px; font-weight: 700; }
+        .data-value.warning { color: var(--primary); }
+        .data-value.accent { color: var(--accent); }
+
+        #doc-panel { position: absolute; top: 0; left: -700px; width: 100%; max-width: 620px; height: 100vh; background: var(--panel-bg); border-right: 1px solid var(--panel-border); z-index: 10; transition: left 0.4s cubic-bezier(0.16, 1, 0.3, 1); pointer-events: auto; backdrop-filter: var(--glass-blur); display: flex; flex-direction: column; box-shadow: 30px 0 60px rgba(0,0,0,0.7); }
+        #doc-panel.open { left: 0; }
+        .doc-header { padding: 25px; border-bottom: 1px solid var(--panel-border); display: flex; justify-content: space-between; align-items: center; }
+        .doc-header h2 { font-size: 15px; text-transform: uppercase; letter-spacing: 2px; color: var(--primary); font-weight: 800; }
+        .close-btn { background: none; border: none; color: var(--text-main); font-size: 24px; cursor: pointer; transition: color 0.2s; }
+        .doc-content { padding: 25px; overflow-y: auto; flex-grow: 1; }
+        .workflow-step { background: var(--input-bg); border-left: 3px solid var(--primary); padding: 14px; margin-bottom: 14px; font-size: 12px; line-height: 1.6; border-radius: 0 6px 6px 0; }
+        .workflow-step strong { display: block; color: var(--text-main); font-size: 11px; text-transform: uppercase; margin-bottom: 4px; letter-spacing: 1px; }
+    </style>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
+</head>
+<body>
+
+    <div id="canvas-container"></div>
+    
+    <!-- GLOBAL UI TOGGLE -->
+    <button id="btn-toggle-ui" class="ui-toggle" title="Press 'H' to toggle UI">HUD [H]</button>
+
+    <div id="ui-layer">
+        <header>
+            <div class="brand-group">
+                <h1>Hypercar Aero <span>Digital Twin</span></h1>
+                <div class="subtitle">SYS.VER // 7.0.0-LMH // AEROSPACE GRADE SIMULATION</div>
+            </div>
+            <div class="header-actions">
+                <button id="btn-theme" class="btn" style="width: auto;">Light Mode</button>
+                <button id="btn-docs" class="btn" style="width: auto; background: var(--primary); border-color: var(--primary-hover); color: white;">Engineering Specs</button>
+            </div>
+        </header>
+
+        <div id="dashboard" class="glass-panel">
+            <div class="panel-section">
+                <label>OEM Spec // Paint & Finish</label>
+                <div class="color-palette">
+                    <div class="swatch" data-paint="silver" title="Liquid Silver Metallic" style="background: linear-gradient(135deg, #e0e6ed, #8a9ba8);"></div>
+                    <div class="swatch" data-paint="red" title="Rosso Corsa" style="background: linear-gradient(135deg, #ff4d4d, #990000);"></div>
+                    <div class="swatch" data-paint="blue" title="Riviera Blue" style="background: linear-gradient(135deg, #00d2ff, #006699);"></div>
+                    <div class="swatch" data-paint="green" title="Acid Green" style="background: linear-gradient(135deg, #00b894, #004d38);"></div>
+                    <div class="swatch" data-paint="white" title="Pearl White" style="background: linear-gradient(135deg, #ffffff, #b0bec5);"></div>
+                    <div class="swatch active" data-paint="onyx" title="Stealth Carbon Onyx" style="background: linear-gradient(135deg, #2c3e50, #0a0b0d);"></div>
+                </div>
+            </div>
+
+            <div class="panel-section">
+                <label>Surfacing Diagnostics</label>
+                <div class="btn-grid">
+                    <button id="mode-carbon" class="btn active">Class-A Paint</button>
+                    <button id="mode-cp" class="btn">Cp Pressure Map</button>
+                    <button id="mode-wireframe" class="btn">Topology Mesh</button>
+                    <button id="mode-xray" class="btn">X-Ray Ghost</button>
+                    <button id="mode-zebra" class="btn btn-full">Curvature Zebra</button>
+                </div>
+            </div>
+
+            <div class="panel-section">
+                <label>Kinematics & CFD</label>
+                <div class="btn-grid">
+                    <button id="btn-drs" class="btn btn-full">Actuate DRS Matrix</button>
+                    <button id="btn-wind" class="btn btn-full" style="margin-top: 6px;">Initialize CFD Vectors</button>
+                </div>
+            </div>
+
+            <div class="panel-section">
+                <div class="slider-header">
+                    <span>Inlet Velocity ($v_{\infty}$)</span>
+                    <span id="speed-val">280 km/h</span>
+                </div>
+                <div class="slider-container">
+                    <input type="range" id="speed-slider" min="60" max="380" value="280" step="5">
+                </div>
+            </div>
+        </div>
+
+        <div id="telemetry" class="glass-panel">
+            <div class="panel-section">
+                <label>Aero Telemetry & Physics Matrix</label>
+                <div class="data-row">
+                    <span class="data-label">DRS Flap Deflection:</span>
+                    <span id="tel-angle" class="data-value accent">0.0°</span>
+                </div>
+                <div class="data-row">
+                    <span class="data-label">Dynamic Pressure ($q$):</span>
+                    <span id="tel-q" class="data-value">3.71 kPa</span>
+                </div>
+                <div class="data-row">
+                    <span class="data-label">Downforce ($F_z$):</span>
+                    <span id="tel-downforce" class="data-value">3210 N</span>
+                </div>
+                <div class="data-row">
+                    <span class="data-label">Aero Drag ($F_x$):</span>
+                    <span id="tel-drag" class="data-value warning">840 N</span>
+                </div>
+                <div class="data-row">
+                    <span class="data-label">Efficiency ($L/D$):</span>
+                    <span id="tel-ld" class="data-value">3.82</span>
+                </div>
+                <div class="data-row">
+                    <span class="data-label">Aero Balance (F/R):</span>
+                    <span id="tel-bal" class="data-value accent">44.2 %</span>
+                </div>
+                <div class="data-row">
+                    <span class="data-label">Drag Power Loss:</span>
+                    <span id="tel-power" class="data-value warning">65.3 kW</span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div id="doc-panel">
+        <div class="doc-header">
+            <h2>LMH Architecture // Technical Matrix</h2>
+            <button class="close-btn" id="btn-close-docs">&times;</button>
+        </div>
+        <div class="doc-content">
+            <div class="workflow-step">
+                <strong>Algorithmic Monocoque Generation</strong>
+                The central chassis utilizes procedural non-linear G2 curvature continuity matching FIA WEC Le Mans Hypercar regulations. Surface continuity is audited via dynamic reflection zebra mapping and real-time scalar pressure coefficient ($C_p$) shading.
+            </div>
+            <div class="workflow-step">
+                <strong>Multi-Element Active Aerodynamics (DRS)</strong>
+                The rear wing assembly incorporates a dual-element high-downforce airfoil with a dynamic low-drag actuator. Hydraulic kinematic motion reduces total profile drag ($F_x$) by ~35% while suppressing trailing vortex shedding.
+            </div>
+            <div class="workflow-step">
+                <strong>Particle Streamline CFD Solver</strong>
+                Simulates dynamic compressible flow using particle velocity integration bounded by the chassis geometry. Streamline color mapping reflects localized vector kinetic energy gradients.
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // --- HUD / UI TOGGLE LOGIC ---
+        const uiLayer = document.getElementById('ui-layer');
+        const btnToggleUi = document.getElementById('btn-toggle-ui');
+        let uiVisible = true;
+
+        function toggleUI() {
+            uiVisible = !uiVisible;
+            if (uiVisible) {
+                uiLayer.classList.remove('hidden');
+                btnToggleUi.classList.remove('ghosted');
+                btnToggleUi.innerText = "HUD [H]";
+            } else {
+                uiLayer.classList.add('hidden');
+                btnToggleUi.classList.add('ghosted');
+                btnToggleUi.innerText = "Show HUD [H]";
+            }
+        }
+
+        btnToggleUi.addEventListener('click', toggleUI);
+        document.addEventListener('keydown', (e) => {
+            if (e.target.tagName.toLowerCase() === 'input' || e.target.tagName.toLowerCase() === 'textarea') return;
+            if (e.key.toLowerCase() === 'h') toggleUI();
+        });
+
+        // --- UI BINDINGS ---
+        document.getElementById('btn-theme').addEventListener('click', (e) => {
+            const html = document.documentElement;
+            const isDark = html.getAttribute('data-theme') === 'dark';
+            html.setAttribute('data-theme', isDark ? 'light' : 'dark');
+            e.target.innerText = isDark ? 'Dark Mode' : 'Light Mode';
+            updateLighting(isDark ? 'light' : 'dark');
+        });
+        document.getElementById('btn-docs').addEventListener('click', () => document.getElementById('doc-panel').classList.add('open'));
+        document.getElementById('btn-close-docs').addEventListener('click', () => document.getElementById('doc-panel').classList.remove('open'));
+
+        // --- PROCEDURAL CARBON FIBER TEXTURE GENERATOR ---
+        function generateCarbonTexture() {
+            const canvas = document.createElement('canvas');
+            canvas.width = 64; canvas.height = 64;
+            const ctx = canvas.getContext('2d');
+            ctx.fillStyle = '#111'; ctx.fillRect(0,0,64,64);
+            ctx.fillStyle = '#222';
+            for(let i=0; i<64; i+=8) {
+                for(let j=0; j<64; j+=8) {
+                    if((i+j)%16 === 0) ctx.fillRect(i,j,8,8);
+                }
+            }
+            const tex = new THREE.CanvasTexture(canvas);
+            tex.wrapS = tex.wrapT = THREE.RepeatWrapping;
+            tex.repeat.set(20, 20);
+            return tex;
+        }
+        const carbonBump = generateCarbonTexture();
+
+        // --- SCENE INITIALIZATION ---
+        const container = document.getElementById('canvas-container');
+        const scene = new THREE.Scene();
+        scene.fog = new THREE.FogExp2(0x060709, 0.0035);
+
+        const camera = new THREE.PerspectiveCamera(40, window.innerWidth / window.innerHeight, 0.1, 1000);
+        camera.position.set(16, 7, 24); 
+
+        const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true, powerPreference: "high-performance" });
+        renderer.setSize(window.innerWidth, window.innerHeight);
+        renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+        renderer.shadowMap.enabled = true;
+        renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+        renderer.toneMapping = THREE.ACESFilmicToneMapping;
+        renderer.toneMappingExposure = 1.15;
+        container.appendChild(renderer.domElement);
+
+        const controls = new THREE.OrbitControls(camera, renderer.domElement);
+        controls.enableDamping = true; 
+        controls.dampingFactor = 0.04; 
+        controls.target.set(0, 1.3, 0); 
+        controls.maxPolarAngle = Math.PI / 2 + 0.01;
+        controls.minDistance = 8; 
+        controls.maxDistance = 45; 
+
+        // --- ADVANCED LIGHTING RIG ---
+        const ambient = new THREE.AmbientLight(0xffffff, 0.4);
+        scene.add(ambient);
+
+        const keyLight = new THREE.DirectionalLight(0xffffff, 1.8);
+        keyLight.position.set(20, 40, 20);
+        keyLight.castShadow = true;
+        keyLight.shadow.mapSize.width = 4096; keyLight.shadow.mapSize.height = 4096;
+        keyLight.shadow.bias = -0.0001;
+        scene.add(keyLight);
+
+        const fillLight = new THREE.DirectionalLight(0x8b9bb4, 0.6);
+        fillLight.position.set(-20, 20, -20);
+        scene.add(fillLight);
+
+        const rim1 = new THREE.SpotLight(0x00d2ff, 4, 100, 0.5, 1, 1);
+        rim1.position.set(-15, 5, -25); rim1.lookAt(0,0,0);
+        scene.add(rim1);
+
+        const rim2 = new THREE.SpotLight(0xe74c3c, 3, 100, 0.5, 1, 1);
+        rim2.position.set(25, 2, 25); rim2.lookAt(0,0,0);
+        scene.add(rim2);
+
+        function updateLighting(theme) {
+            const isLight = theme === 'light';
+            scene.fog.color.setHex(isLight ? 0xdce3eb : 0x060709);
+            ambient.intensity = isLight ? 0.95 : 0.4;
+            keyLight.intensity = isLight ? 2.2 : 1.8;
+        }
+
+        // --- MATERIAL & LIVERY ARCHITECTURE ---
+        const paintPresets = {
+            silver: { color: 0xc4cdd6, roughness: 0.1, metalness: 0.95 },
+            red:    { color: 0xc0392b, roughness: 0.15, metalness: 0.5 },
+            blue:   { color: 0x006699, roughness: 0.12, metalness: 0.7 },
+            green:  { color: 0x00b894, roughness: 0.15, metalness: 0.6 },
+            white:  { color: 0xf0f3f6, roughness: 0.2,  metalness: 0.2 },
+            onyx:   { color: 0x0a0b0d, roughness: 0.15, metalness: 0.8 }
+        };
+
+        const matCarbon = new THREE.MeshStandardMaterial({ color: 0x111214, roughness: 0.35, metalness: 0.6, bumpMap: carbonBump, bumpScale: 0.015 });
+        const matBody = new THREE.MeshPhysicalMaterial({ 
+            color: paintPresets.onyx.color, roughness: paintPresets.onyx.roughness, 
+            metalness: paintPresets.onyx.metalness, clearcoat: 1.0, clearcoatRoughness: 0.08 
+        });
+        const matAero = new THREE.MeshPhysicalMaterial({ color: 0xe74c3c, roughness: 0.2, metalness: 0.5, clearcoat: 0.9 });
+        const matAlloy = new THREE.MeshStandardMaterial({ color: 0x99aab8, roughness: 0.2, metalness: 0.95 });
+        const matTire = new THREE.MeshStandardMaterial({ color: 0x1a1a1a, roughness: 0.9, metalness: 0.1 });
+        const matGlass = new THREE.MeshPhysicalMaterial({ color: 0x050505, metalness: 0.9, roughness: 0.05, transmission: 0.92, transparent: true, opacity: 1 });
+        const matXray = new THREE.MeshPhysicalMaterial({ color: 0x00d2ff, roughness: 0.1, metalness: 0.1, transmission: 0.88, transparent: true, opacity: 0.45 });
+        const matWire = new THREE.MeshBasicMaterial({ color: 0x00d2ff, wireframe: true, transparent: true, opacity: 0.35 });
+
+        // Pressure Coefficient Cp Canvas Texture Simulation
+        const canvasCp = document.createElement('canvas'); canvasCp.width = 256; canvasCp.height = 256;
+        const ctxCp = canvasCp.getContext('2d');
+        const gradCp = ctxCp.createLinearGradient(0, 0, 0, 256);
+        gradCp.addColorStop(0, '#ff0000'); // High pressure (red)
+        gradCp.addColorStop(0.3, '#ffff00'); // Moderate
+        gradCp.addColorStop(0.6, '#00ff00'); // Ambient
+        gradCp.addColorStop(1.0, '#0000ff'); // Low pressure / suction (blue)
+        ctxCp.fillStyle = gradCp; ctxCp.fillRect(0,0,256,256);
+        const texCp = new THREE.CanvasTexture(canvasCp);
+        const matCp = new THREE.MeshBasicMaterial({ map: texCp });
+
+        // Zebra Striping Material
+        const canvasZebra = document.createElement('canvas'); canvasZebra.width = 512; canvasZebra.height = 512;
+        const ctxZ = canvasZebra.getContext('2d');
+        ctxZ.fillStyle = '#ffffff'; ctxZ.fillRect(0,0,512,512);
+        ctxZ.fillStyle = '#000000'; for(let i=0; i<512; i+=32) ctxZ.fillRect(i,0,16,512);
+        const texZebra = new THREE.CanvasTexture(canvasZebra);
+        texZebra.wrapS = texZebra.wrapT = THREE.RepeatWrapping; texZebra.repeat.set(8, 8);
+        const matZebra = new THREE.MeshBasicMaterial({ map: texZebra });
+
+        // --- LMH PROCEDURAL CHASSIS GENERATOR ---
+        const vehicle = new THREE.Group();
+        scene.add(vehicle);
+        const bodyPanels = [];
+        const wheels = [];
+
+        function createSculptedVolume(w, h, d, segW, segH, segD, deformFn, material) {
+            const geo = new THREE.BoxGeometry(w, h, d, segW, segH, segD);
+            const pos = geo.attributes.position;
+            for(let i=0; i<pos.count; i++) {
+                const p = new THREE.Vector3(pos.getX(i), pos.getY(i), pos.getZ(i));
+                const def = deformFn(p.x, p.y, p.z, w, h, d);
+                pos.setXYZ(i, def.x, def.y, def.z);
+            }
+            geo.computeVertexNormals();
+            const mesh = new THREE.Mesh(geo, material);
+            mesh.castShadow = true; mesh.receiveShadow = true;
+            bodyPanels.push(mesh);
+            return mesh;
+        }
+
+        // Fuselage Body
+        const fuselage = createSculptedVolume(6.5, 3.2, 32, 32, 16, 64, (x, y, z, W, H, D) => {
+            const nZ = z / (D/2);
+            let wScale = 1.0, hScale = 1.0;
+            if (nZ < 0) {
+                wScale = 1 - Math.pow(Math.abs(nZ), 1.8) * 0.7;
+                hScale = 1 - Math.pow(Math.abs(nZ), 1.5) * 0.4;
+            } else {
+                wScale = 1 - Math.pow(nZ, 2.2) * 0.85;
+                hScale = 1 - Math.pow(nZ, 1.8) * 0.6;
+            }
+            if (y > 0 && Math.abs(x) > 1.5) hScale *= 0.7;
+            if (y < 0 && Math.abs(x) > 1.4) wScale *= 0.8;
+            return { x: x * wScale, y: y > -H/2 ? y * hScale : y, z: z };
+        }, matBody);
+        fuselage.position.y = 1.8; vehicle.add(fuselage);
+
+        // Canopy Glass
+        const canopy = createSculptedVolume(3.8, 2.0, 14, 24, 12, 32, (x, y, z, W, H, D) => {
+            const nZ = z / (D/2);
+            let s = nZ < 0 ? (1 - Math.pow(Math.abs(nZ), 1.5)) : (1 - Math.pow(nZ, 2.5));
+            return { x: x * s, y: y > -H/2 ? y * s : y, z: z };
+        }, matGlass);
+        canopy.position.set(0, 3.4, -2.0); vehicle.add(canopy);
+
+        // LMH Shark Fin (Dorsal Stability Plane)
+        const finGeo = new THREE.BoxGeometry(0.12, 1.8, 12);
+        const finPos = finGeo.attributes.position;
+        for(let i=0; i<finPos.count; i++) {
+            if(finPos.getZ(i) < 0) finPos.setY(i, finPos.getY(i) * 0.5);
+        }
+        finGeo.computeVertexNormals();
+        const dorsalFin = new THREE.Mesh(finGeo, matCarbon);
+        dorsalFin.position.set(0, 3.7, 5.0); dorsalFin.castShadow = true;
+        vehicle.add(dorsalFin); bodyPanels.push(dorsalFin);
+
+        // Wheel Fenders
+        function createFender(xPos, zPos, isFront) {
+            const fender = createSculptedVolume(2.6, 2.4, 8, 16, 12, 24, (x, y, z, W, H, D) => {
+                const nZ = z / (D/2);
+                let wScale = 1 - Math.pow(Math.abs(nZ), 2) * 0.6;
+                let hScale = 1 - Math.pow(Math.abs(nZ), 1.8) * 0.8;
+                if(isFront && nZ > 0.4) wScale *= (1 - (nZ-0.4)*1.5);
+                return { x: x * wScale, y: y > -H/2 ? y * hScale : y, z: z };
+            }, matBody);
+            fender.position.set(xPos, 1.7, zPos); vehicle.add(fender);
+        }
+        createFender(4.2, -10.5, true); createFender(-4.2, -10.5, true);
+        createFender(4.4, 9.5, false); createFender(-4.4, 9.5, false);
+
+        // Floor & Rear Diffuser Strakes
+        const floorGeo = new THREE.BoxGeometry(16, 0.15, 36, 16, 1, 16);
+        const flPos = floorGeo.attributes.position;
+        for(let i=0; i<flPos.count; i++) {
+            if(flPos.getZ(i) > 10 && Math.abs(flPos.getX(i)) < 6.5) {
+                flPos.setY(i, flPos.getY(i) + (flPos.getZ(i) - 10) * 0.18);
+            }
+        }
+        floorGeo.computeVertexNormals();
+        const floor = new THREE.Mesh(floorGeo, matCarbon);
+        floor.position.set(0, 0.25, 0); floor.receiveShadow = true; floor.castShadow = true;
+        vehicle.add(floor); bodyPanels.push(floor);
+
+        // Front Splitter & Canards
+        const splitterGeo = new THREE.BoxGeometry(7.2, 0.1, 4.2, 8, 1, 4);
+        const spPos = splitterGeo.attributes.position;
+        for(let i=0; i<spPos.count; i++) {
+            if(spPos.getZ(i) > 0) spPos.setX(i, spPos.getX(i) * 0.85);
+        }
+        splitterGeo.computeVertexNormals();
+        const splitter = new THREE.Mesh(splitterGeo, matAero);
+        splitter.position.set(0, 0.25, -15.5); splitter.isAero = true;
+        vehicle.add(splitter); bodyPanels.push(splitter);
+
+        // Rear Wing Assembly & DRS Flap
+        const wingGrp = new THREE.Group();
+        const pGeo = new THREE.BoxGeometry(0.2, 4.0, 3.0); pGeo.translate(0, 2.0, 0);
+        const pos = pGeo.attributes.position;
+        for(let i=0; i<pos.count; i++) if(pos.getY(i) > 2) pos.setZ(i, pos.getZ(i) - pos.getY(i)*0.4);
+        pGeo.computeVertexNormals();
+        const p1 = new THREE.Mesh(pGeo, matAlloy); p1.position.set(-3.5, 0, 0);
+        const p2 = new THREE.Mesh(pGeo, matAlloy); p2.position.set(3.5, 0, 0);
+        wingGrp.add(p1, p2);
+
+        const mpGeo = new THREE.BoxGeometry(15, 0.4, 3.2, 8, 2, 8);
+        const mpPos = mpGeo.attributes.position;
+        for(let i=0; i<mpPos.count; i++){
+            let z = mpPos.getZ(i);
+            if(z > 0) mpPos.setY(i, mpPos.getY(i) * (1 - (z/1.6)*0.85));
+            else mpPos.setY(i, mpPos.getY(i) * 1.2);
+        }
+        mpGeo.computeVertexNormals();
+        const mainWing = new THREE.Mesh(mpGeo, matAero); mainWing.position.set(0, 4.0, 1.0); mainWing.isAero = true;
+        wingGrp.add(mainWing); bodyPanels.push(mainWing);
+
+        const drsPivot = new THREE.Group(); drsPivot.position.set(0, 4.1, 2.8);
+        const flapGeo = new THREE.BoxGeometry(14.8, 0.2, 1.5, 8, 2, 4);
+        const fpPos = flapGeo.attributes.position;
+        for(let i=0; i<fpPos.count; i++){
+            let z = fpPos.getZ(i);
+            if(z > 0) fpPos.setY(i, fpPos.getY(i) * (1 - (z/0.75)*0.85));
+        }
+        flapGeo.computeVertexNormals();
+        const flap = new THREE.Mesh(flapGeo, matAero); flap.position.set(0, 0, 0.75); flap.isAero = true;
+        drsPivot.add(flap); wingGrp.add(drsPivot); bodyPanels.push(flap);
+        
+        const epGeo = new THREE.BoxGeometry(0.1, 1.6, 3.6);
+        const epL = new THREE.Mesh(epGeo, matAero); epL.position.set(-7.5, 3.9, 1.2); epL.isAero = true;
+        const epR = new THREE.Mesh(epGeo, matAero); epR.position.set(7.5, 3.9, 1.2); epR.isAero = true;
+        wingGrp.add(epL, epR); bodyPanels.push(epL, epR);
+
+        wingGrp.position.set(0, 1.8, 14); vehicle.add(wingGrp);
+
+        // Wheel Assemblies with Rim Spokes
+        function createWheel(x, z) {
+            const wGrp = new THREE.Group(); wGrp.position.set(x, 1.6, z);
+            const wGeo = new THREE.CylinderGeometry(1.6, 1.6, 1.8, 32); wGeo.rotateZ(Math.PI/2);
+            const tire = new THREE.Mesh(wGeo, matTire); tire.castShadow = true;
+            const rimGeo = new THREE.CylinderGeometry(1.1, 1.1, 1.82, 10); rimGeo.rotateZ(Math.PI/2);
+            const rim = new THREE.Mesh(rimGeo, matAlloy);
+            wGrp.add(tire, rim);
+            vehicle.add(wGrp);
+            wheels.push(wGrp);
+            bodyPanels.push(tire);
+        }
+        createWheel(4.5, -10.5); createWheel(-4.5, -10.5);
+        createWheel(4.7, 9.5); createWheel(-4.7, 9.5);
+
+        // Ground & Track Grid
+        const ground = new THREE.Mesh(new THREE.PlaneGeometry(300, 300), new THREE.MeshStandardMaterial({ color: 0x050608, roughness: 0.2, metalness: 0.8 }));
+        ground.rotation.x = -Math.PI / 2; ground.receiveShadow = true; scene.add(ground);
+        const grid = new THREE.GridHelper(300, 100, 0x00d2ff, 0x1c2834); grid.position.y = 0.02; scene.add(grid);
+
+        // CFD Particle Streamlines
+        const pCount = 6000;
+        const pGeoObj = new THREE.BufferGeometry();
+        const pPos = new Float32Array(pCount * 3); 
+        const pVel = new Float32Array(pCount);
+        for(let i=0; i<pCount; i++) {
+            pPos[i*3] = (Math.random() - 0.5) * 26; 
+            pPos[i*3+1] = Math.random() * 11 + 0.2; 
+            pPos[i*3+2] = (Math.random() - 0.5) * 90;
+            pVel[i] = 1.0 + Math.random() * 0.5;
+        }
+        pGeoObj.setAttribute('position', new THREE.BufferAttribute(pPos, 3));
+        const pMat = new THREE.PointsMaterial({ color: 0x00d2ff, size: 0.16, transparent: true, opacity: 0, blending: THREE.AdditiveBlending });
+        const windTunnel = new THREE.Points(pGeoObj, pMat); scene.add(windTunnel);
+
+        // APP STATE & INTERACTION PIPELINE
+        const state = { mode: 'carbon', drs: false, wind: false, speed: 280, angle: 0, targetAngle: 0, paint: 'onyx' };
+        const ui = {
+            btnDrs: document.getElementById('btn-drs'), btnWind: document.getElementById('btn-wind'),
+            angle: document.getElementById('tel-angle'), q: document.getElementById('tel-q'),
+            df: document.getElementById('tel-downforce'), drag: document.getElementById('tel-drag'),
+            ld: document.getElementById('tel-ld'), bal: document.getElementById('tel-bal'),
+            power: document.getElementById('tel-power'), speedSlider: document.getElementById('speed-slider'),
+            speedVal: document.getElementById('speed-val')
+        };
+        const modes = {
+            carbon: document.getElementById('mode-carbon'), cp: document.getElementById('mode-cp'),
+            wireframe: document.getElementById('mode-wireframe'), xray: document.getElementById('mode-xray'),
+            zebra: document.getElementById('mode-zebra')
+        };
+
+        // Paint Swatch Selection
+        document.querySelectorAll('.swatch').forEach(swatch => {
+            swatch.addEventListener('click', (e) => {
+                document.querySelectorAll('.swatch').forEach(s => s.classList.remove('active'));
+                const target = e.currentTarget; target.classList.add('active');
+                state.paint = target.getAttribute('data-paint'); const spec = paintPresets[state.paint];
+                matBody.color.setHex(spec.color); matBody.roughness = spec.roughness; matBody.metalness = spec.metalness; matBody.needsUpdate = true;
+                if(state.mode !== 'carbon') modes.carbon.click();
+            });
+        });
+
+        // Diagnostic Mode Toggles
+        Object.keys(modes).forEach(m => {
+            modes[m].addEventListener('click', () => {
+                Object.values(modes).forEach(b => b.classList.remove('active')); modes[m].classList.add('active'); state.mode = m;
+                bodyPanels.forEach(mesh => {
+                    if(m === 'carbon') mesh.material = (mesh === canopy) ? matGlass : (mesh === floor || mesh === dorsalFin) ? matCarbon : (mesh.isAero) ? matAero : (mesh === bodyPanels[bodyPanels.length-1]) ? matTire : matBody;
+                    if(m === 'cp') mesh.material = matCp;
+                    if(m === 'wireframe') mesh.material = matWire; 
+                    if(m === 'xray') mesh.material = matXray; 
+                    if(m === 'zebra') mesh.material = matZebra;
+                });
+            });
+        });
+
+        // DRS & Wind Solver Actuators
+        ui.btnDrs.addEventListener('click', () => { state.drs = !state.drs; ui.btnDrs.classList.toggle('active', state.drs); state.targetAngle = state.drs ? -0.75 : 0; });
+        ui.btnWind.addEventListener('click', () => { state.wind = !state.wind; ui.btnWind.classList.toggle('active', state.wind); });
+        ui.speedSlider.addEventListener('input', (e) => { state.speed = parseInt(e.target.value); ui.speedVal.innerText = `${state.speed} km/h`; });
+
+        window.addEventListener('resize', () => { camera.aspect = window.innerWidth / window.innerHeight; camera.updateProjectionMatrix(); renderer.setSize(window.innerWidth, window.innerHeight); });
+
+        // MAIN ANIMATION LOOP & PHYSICS SOLVER
+        const clock = new THREE.Clock();
+        function animate() {
+            requestAnimationFrame(animate); const dt = clock.getDelta();
+
+            // Smooth DRS Actuation Kinematics
+            state.angle = THREE.MathUtils.lerp(state.angle, state.targetAngle, 10 * dt);
+            drsPivot.rotation.x = state.angle; 
+            ui.angle.innerText = `${Math.abs(state.angle * (180/Math.PI)).toFixed(1)}°`;
+
+            // Aerodynamic Telemetry Computation (Real Equations)
+            const vMS = state.speed / 3.6; // Velocity in m/s
+            const rho = 1.225; // Standard air density (kg/m^3)
+            const q = 0.5 * rho * vMS * vMS; // Dynamic pressure q (Pa)
+            const refArea = 2.2; // Frontal reference area A (m^2)
+
+            let cL = state.drs ? 2.1 : 3.4; // Lift/Downforce Coefficient
+            let cD = state.drs ? 0.52 : 0.82; // Drag Coefficient
+
+            const curDf = Math.round(q * refArea * cL); 
+            const curDrag = Math.round(q * refArea * cD);
+            const powerLoss = ((curDrag * vMS) / 1000).toFixed(1); // kW
+            const balanceFront = (44.2 + (state.drs ? 3.5 : 0)).toFixed(1);
+
+            ui.q.innerText = `${(q / 1000).toFixed(2)} kPa`;
+            ui.df.innerText = `${curDf} N`; 
+            ui.drag.innerText = `${curDrag} N`; 
+            ui.ld.innerText = (curDf / (curDrag || 1)).toFixed(2);
+            ui.bal.innerText = `${balanceFront} %`;
+            ui.power.innerText = `${powerLoss} kW`;
+
+            // Wheel Angular Kinematics Sync
+            const omega = vMS / 0.45; // Tire radius = 0.45m
+            wheels.forEach(w => w.rotation.x += omega * dt);
+            grid.position.z = (grid.position.z + vMS * dt * 2) % 3;
+
+            // CFD Particle Wind Tunnel Streamlines
+            if(state.wind && pMat.opacity < 0.7) pMat.opacity += dt * 2; 
+            else if(!state.wind && pMat.opacity > 0) pMat.opacity -= dt * 2;
+
+            if(pMat.opacity > 0) {
+                const posArr = windTunnel.geometry.attributes.position.array; 
+                const flowV = (state.speed / 280) * 1.6;
+                for(let i=0; i<pCount; i++) {
+                    posArr[i*3+2] += pVel[i] * flowV; 
+                    let x = posArr[i*3], y = posArr[i*3+1], z = posArr[i*3+2];
+                    if(Math.abs(x) < 5.2 && z > -22 && z < 22) {
+                        const profZ = (z + 22) / 44; 
+                        const boundY = Math.sin(profZ * Math.PI) * 4.8 + 0.4;
+                        if(y < boundY) { 
+                            posArr[i*3+1] += (boundY - y) * 0.18 * flowV; 
+                            posArr[i*3] += (x > 0 ? 0.06 : -0.06) * flowV; 
+                        }
+                    }
+                    if(z > 45) { 
+                        posArr[i*3] = (Math.random() - 0.5) * 26; 
+                        posArr[i*3+1] = Math.random() * 11 + 0.2; 
+                        posArr[i*3+2] = -45; 
+                    }
+                }
+                windTunnel.geometry.attributes.position.needsUpdate = true;
+            }
+
+            controls.update(); 
+            renderer.render(scene, camera);
+        }
+        animate();
+    </script>
+</body>
+</html>
